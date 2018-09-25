@@ -1,4 +1,4 @@
-import random, string
+import random, string, heapq
 import collections
 class Solution(object):
     class TreeNode():
@@ -7,19 +7,99 @@ class Solution(object):
             self.left = None
             self.right = None
     
+    class ListNode():
+        def __init__(self, val):
+            self.val = val
+    
     class TrieNode(object):
         def __init__(self):
             self.children = {}
             self.is_word = False
 
+    class MedianFinder:
+        # TODO:
+        def __init__(self):
+            self.heaps = [], []
+
+        def addNum(self, num):
+            small, large = self.heaps
+            heapq.heappush(small, -heapq.heappushpop(large, num))
+            if len(large) < len(small):
+                heapq.heappush(large, -heapq.heappop(small))
+
+        def findMedian(self):
+            small, large = self.heaps
+            if len(large) > len(small):
+                return float(large[0])
+            return (large[0] - small[0]) / 2.0
+
+    def addBinary(self, a, b):
+        """LeetCode 67 Add Binary"""
+        # Any input is 0
+        if len(a)==0: 
+            return b
+        if len(b)==0:
+            return a
+        # Use recursive approach to search the rest of binaries
+        if a[-1] == '1' and b[-1] == '1':
+            # Tricky part
+            return self.addBinary(self.addBinary(a[0:-1],b[0:-1]),'1')+'0'
+        if a[-1] == '0' and b[-1] == '0':
+            return self.addBinary(a[0:-1],b[0:-1])+'0'
+        else:
+            return self.addBinary(a[0:-1],b[0:-1])+'1'
+
+    def addTwoNumbers(self, l1, l2):
+        """LeetCode 2 Add two numbers"""
+        # Use dummy head to link to the read head
+        head = self.ListNode(0)
+        cur = head
+        # Use sum and carry to calculate the in-time result
+        node_sum = 0
+        node_carry = 0
+
+        while l1 and l2:
+            # Continuously add them
+            node_sum = l1.val + l2.val + node_carry
+            node_digit = node_sum % 10
+            node_carry = node_sum / 10
+            # After calculating the value, create new next node for the current, then move forward all
+            cur.next = self.ListNode(node_digit)
+            cur = cur.next
+            l1 = l1.next
+            l2 = l2.next
+        # Come to final process
+        tail = None
+        if l1:
+            tail = l1
+        if l2:
+            tail = l2
+        # If the tail is 9 and carry is one, add new node for that
+        while tail:
+            if tail.val == 9 and node_carry == 1:
+                cur.next = self.ListNode(0)
+                node_carry = 1
+            else:
+                cur.next = self.ListNode(tail.val + node_carry) 
+                node_carry = 0
+            cur = cur.next
+            tail = tail.next
+        # Decide if we left the final tail
+        if node_carry:
+            cur.next = self.ListNode(node_carry)
+        # Return the dummy.next
+        return head.next
+
     class Codec:
         """LeetCode 535 Encode and Decode TinyURL"""
         def __init__(self):
+            # Random of alphabetic
             self.alphabet = string.ascii_letters + '0123456789'
             self.url2code = {}
             self.code2url = {}
 
         def encode(self, longUrl):
+            # If the longURL is not successly assigned, we will just go into loop
             while longUrl not in self.url2code:
                 code = ''.join(random.choice(self.alphabet) for _ in range(6))
                 if code not in self.code2url:
@@ -28,14 +108,48 @@ class Solution(object):
             return 'http://tinyurl.com/' + self.url2code[longUrl]
 
         def decode(self, shortUrl):
+            # Get the url from the shortURL and search in code2url
             return self.code2url[shortUrl[-6:]]
     
+    def findMedianSortedArrays(self, A, B):
+        """LeetCode
+        """
+        # TODO:
+        def kth(a, b, k):
+            # If any array is empty, we directly return the non-empty one
+            if not a:
+                return b[k]
+            if not b:
+                return a[k]
+            ia, ib = len(a) // 2 , len(b) // 2
+            ma, mb = a[ia], b[ib]
+            
+            # when k is bigger than the sum of a and b's median indices 
+            if ia + ib < k:
+                # if a's median is bigger than b's, b's first half doesn't include k
+                if ma > mb:
+                    return kth(a, b[ib + 1:], k - ib - 1)
+                else:
+                    return kth(a[ia + 1:], b, k - ia - 1)
+            # when k is smaller than the sum of a and b's indices
+            else:
+                # if a's median is bigger than b's, a's second half doesn't include k
+                if ma > mb:
+                    return kth(a[:ia], b, k)
+                else:
+                    return kth(a, b[:ib], k)
+        l = len(A) + len(B)
+        if l % 2 == 1:
+            return kth(A, B, l // 2)
+        else:
+            return (kth(A, B, l // 2) + kth(A, B, l // 2 - 1)) / 2.   
 
     class WordDictionary(object):
         def __init__(self):
             self.root = TrieNode()
         
         def addWord(self, word):
+            # Create TrieNode from root
             node = self.root
             for c in word:
                 if c not in node.children:
@@ -48,6 +162,7 @@ class Solution(object):
             return self.searchFrom(self.root, word)
         
         def searchFrom(self, node, word):
+            # For each character, we see if there are any path and end-point
             for i in range(len(word)):
                 c = word[i]
                 if c == '.':
@@ -62,17 +177,20 @@ class Solution(object):
 
     def findKthLargest(self, nums, k):
         """LeetCode 215 Kth Largest Element in an Array
-
         """
+        # TODO:
+        # Use max heap to store the k-largest numbers
         import heapq
         count = []
         for num in nums:
             heapq.heappush(count, num)
+            # if the length is larger than k, we pop the smallest one
             if len(count) > k:
                 heapq.heappop(count)
         return heapq.heappop(count)
 
     def searchRotatedSortedArray(self, nums, target):
+        # TODO:
         lo, hi = 0, len(nums) - 1
         while lo < hi:
             mid = (lo + hi) / 2
@@ -86,28 +204,35 @@ class Solution(object):
         """LeetCode 298 Binary Tree Longest Consecutive Sequence"""
         if not root:
             return 0
-            
+        
         ret = 0
+        # The structure that store the (node, count) value
         stack = [(root, 1)]
         while stack:
             node, cnt = stack.pop()
+            # If any side of binary is consecutive, plus the count, and append it to stack
             if node.left:
                 stack.append((node.left, cnt+1 if node.left.val == node.val + 1 else 1))
             if node.right:
                 stack.append((node.right, cnt+1 if node.right.val == node.val + 1 else 1))
+            # Get the maximum count
             ret = max(ret, cnt)
             
         return ret
 
     def isSubtree(self, s, t):
         """LeetCode Subtree of another Tree"""
+        # Compare if two nodes are the same
         def isMatch(s, t):
             if not(s and t):
                 return s is t
             return (s.val == t.val and 
                     isMatch(s.left, t.left) and 
                     isMatch(s.right, t.right))
-        if isMatch(s, t): return True
+        # If both trees are same
+        if isMatch(s, t): 
+            return True
+        # if we reach the end, return False
         if not s: return False
         return self.isSubtree(s.left, t) or self.isSubtree(s.right, t)
 
@@ -115,16 +240,17 @@ class Solution(object):
         """LeetCode 
         """
         if inorder:
+            # Get the root from preorder
             ind = inorder.index(preorder.pop(0))
+            # Create the order and set it as root
             root = self.TreeNode(inorder[ind])
+            # Move from left to right to construct the rest
             root.left = self.buildTree(preorder, inorder[0:ind])
             root.right = self.buildTree(preorder, inorder[ind+1:])
             return root
 
     def buildTree(self, inorder, postorder):
         """LeetCode 106 Construct binary tree from in-order and post-order
-        https://leetcode.com/problems/construct-binary-tree-from-inorder-and-postorder-traversal/description/
-
         """
         if not inorder or not postorder:
             return None
@@ -144,12 +270,13 @@ class Solution(object):
         Time: O(n)
         Space: O(1)
         """
+        # Product the array with 1 offset
         res = [0] * len(nums)
         res[0] = 1
         for i in range(1, len(nums)):
             res[i] = res[i-1] * nums[i-1]
         
-        # Now reverse the order
+        # Now reverse the order with one offset
         tmp = 1
         for i in reversed(range(len(nums))):
             res[i] *= tmp
@@ -197,7 +324,7 @@ class Solution(object):
         
         res = set()
         nums1.sort()
-        
+        # Sort and binary search the element O(nlogn)
         for num in nums2:
             test = binary_search(nums1, num)
             print(test)
@@ -210,6 +337,7 @@ class Solution(object):
         C = ["", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"]
         X = ["", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"]
         I = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"]
+        # Fast approach
         return M[num/1000] + C[(num%1000)/100] + X[(num%100)/10] + I[num%10]
 
     def romanToInt(self, s):
@@ -219,7 +347,6 @@ class Solution(object):
         size = len(s)
         i = 0
         while i < size:
-            digit = conversion[s[i]]
             if i < size - 1 and conversion[s[i+1]] > conversion[s[i]]:
                 res += conversion[s[i+1]] - conversion[s[i]]
                 i += 1
@@ -234,16 +361,20 @@ class Solution(object):
         i, signs = 0, [1, 1]
         while i < len(s):
             c = s[i]
+            # If the character is digit, get the following digits
             if c.isdigit():
                 start = i
                 while i < len(s) and s[i].isdigit():
                     i += 1
                 total += signs.pop() * int(s[start:i])
                 continue
+            # If the character is +-(, we can assign -1 for -, + for both (
             if c in '+-(':
-                signs += signs[-1] * (1, -1)[c == '-'],
+                signs += signs[-1] * (1, -1)[c == '-']
+            # if the character is ), pop the left (
             elif c == ')':
                 signs.pop()
+            # Continue the loop until i reach end
             i += 1
         return total
 
@@ -258,17 +389,20 @@ class Solution(object):
         stack.append(head)
         prev = dummy
         while stack:
+            # Connect previous node with current node
             root = stack.pop()
             root.prev = prev
             prev.next = root
-
+            # first append next node to stack
             if root.next:
                 stack.append(root.next)
                 root.next = None
+            # Then append child nodes to stack
             if root.child:
                 stack.append(root.child)
                 root.child = None
             prev = root
+        # Final process to remove the dummy
         dummy.next.prev = None
         return dummy.next
 
@@ -280,6 +414,7 @@ class Solution(object):
         count = 0
         for i, x in enumerate(nums):
             if x == target:
+                # The new item has 1/i probability to replace res
                 count += 1
                 chance = random.randint(1, count)
                 if chance == count:
@@ -287,7 +422,7 @@ class Solution(object):
         return res
 
     def addOperators(self, num, target):
-        """LeetCode 282"""
+        """LeetCode 282 Expression Operator"""
         def dfs(num, temp, cur, last, res):
             if not num:
                 if cur == target:
@@ -324,11 +459,15 @@ class Solution(object):
         i = 0
         while i < len(nums):
             num = nums[i]
+            # Move forward until we meet a gap
             while i < len(nums) - 1 and nums[i] + 1 == nums[i+1]:
                 i += 1
+            # if the current num is not destination num
             if num != nums[i]:
+                # append them together
                 res.append("{0}->{1}".format(num, nums[i]))
             else:
+                # Add it to result
                 res.append(str(num))
             i += 1
 
@@ -428,9 +567,11 @@ class Solution(object):
         space:
         """
         import re
+        # Match the number before e
         number = r"^(0?|[1-9][0-9]*)(\.[0-9]*[1-9])?$"
         # number = "^[-+]?([0-9]+(\.[0-9]*)?)$"
         is_num = lambda x : re.match(number, x) != None
+        # match the number after e
         is_int = lambda x : re.match("^[-+]?[0-9][0-9]*$", x) != None
         s = s.strip().lower()
         s = s.split('e')
@@ -444,9 +585,11 @@ class Solution(object):
         space: O(1)
         """
         from bisect import bisect_right
+        # Find the right position of arr
         index = bisect_right(arr, x)
         i = index - 1
         j = index
+        # Search the left and right
         while k > 0:
             k -= 1
             if i < 0 or (j < len(arr) and abs(arr[i] - x) > abs(arr[j]-x)):
@@ -655,9 +798,11 @@ class Solution(object):
                 return not s
         level = {s}
         while True:
+            # Use filter to judge if the level is right
             valid = list(filter(isValid, level))
             if valid:
                 return valid
+            # Get all the possible output from level
             level = {s[:i] + s[i+1:] for s in level for i in range(len(s))}
 
     def threeSum(self, nums):
@@ -670,14 +815,17 @@ class Solution(object):
         for index in range(len(nums)-2):
             if nums[index] == nums[index-1] and index > 0:
                 continue
+            # Start from index + 1 to end of array
             left, right = index + 1, len(nums)-1
             while left < right:
+                # If sum left + right + index is not 0
                 s = nums[left] + nums[right] + nums[index]
                 if s<0:
                     left += 1
                 elif s>0:
                     right -= 1
                 else:
+                    # Else remove add it to result and move duplicate element
                     result_array.append([nums[index], nums[left], nums[right]])
                     while left < right and nums[left+1] == nums[left]:
                         left += 1
@@ -709,16 +857,19 @@ class Solution(object):
 
         def dfs(pos):
             for i in graph[pos]:
+                # If the node is painted
                 if i in color:
                     if color[i] == color[pos]:
                         return False
                 else:
+                    # Color any adjacent node to another color
                     color[i] = 1 - color[pos]
                     if not dfs(i):
                         return False
             return True
         for i in range(len(graph)):
             if i not in color:
+                # Paint with 0 color
                 color[i] = 0
             if not dfs(i):
                 return False
@@ -792,11 +943,12 @@ class Solution(object):
         for interval in intervals:
             starts.append(interval[0])
             ends.append(interval[1])
-        
+        # Sort the start and end array
         starts.sort()
         ends.sort()
 
         end = 0
+        # Move the end or add result
         for i in range(len(starts)):
             if starts[i] < ends[end]:
                 res += 1
