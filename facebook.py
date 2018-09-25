@@ -1,11 +1,89 @@
+import random, string
+import collections
 class Solution(object):
     class TreeNode():
         def __init__(self, x):
             self.val = x
             self.left = None
             self.right = None
+    
+    class TrieNode(object):
+        def __init__(self):
+            self.children = {}
+            self.is_word = False
+
+    class Codec:
+        """LeetCode 535 Encode and Decode TinyURL"""
+        def __init__(self):
+            self.alphabet = string.ascii_letters + '0123456789'
+            self.url2code = {}
+            self.code2url = {}
+
+        def encode(self, longUrl):
+            while longUrl not in self.url2code:
+                code = ''.join(random.choice(self.alphabet) for _ in range(6))
+                if code not in self.code2url:
+                    self.code2url[code] = longUrl
+                    self.url2code[longUrl] = code
+            return 'http://tinyurl.com/' + self.url2code[longUrl]
+
+        def decode(self, shortUrl):
+            return self.code2url[shortUrl[-6:]]
+    
+
+    class WordDictionary(object):
+        def __init__(self):
+            self.root = TrieNode()
+        
+        def addWord(self, word):
+            node = self.root
+            for c in word:
+                if c not in node.children:
+                    node.children[c] = TrieNode()
+                node = node.children[c]
+            node.is_word = True
+            
+
+        def search(self, word):
+            return self.searchFrom(self.root, word)
+        
+        def searchFrom(self, node, word):
+            for i in range(len(word)):
+                c = word[i]
+                if c == '.':
+                    for k in node.children:
+                        if self.searchFrom(node.children[k], word[i+1:]):
+                            return True
+                    return False
+                elif c not in node.children:
+                    return False
+                node = node.children[c]
+            return node.is_word
+
+    def findKthLargest(self, nums, k):
+        """LeetCode 215 Kth Largest Element in an Array
+
+        """
+        import heapq
+        count = []
+        for num in nums:
+            heapq.heappush(count, num)
+            if len(count) > k:
+                heapq.heappop(count)
+        return heapq.heappop(count)
+
+    def searchRotatedSortedArray(self, nums, target):
+        lo, hi = 0, len(nums) - 1
+        while lo < hi:
+            mid = (lo + hi) / 2
+            if (nums[0] > target) ^ (nums[0] > nums[mid]) ^ (target > nums[mid]):
+                lo = mid + 1
+            else:
+                hi = mid
+        return lo if target in nums[lo:lo+1] else -1
 
     def longestConsecutive(self, root):
+        """LeetCode 298 Binary Tree Longest Consecutive Sequence"""
         if not root:
             return 0
             
@@ -127,6 +205,13 @@ class Solution(object):
                 res.add(num)
         return list(res)
     
+    def intToRoman(self, num):
+        M = ["", "M", "MM", "MMM"]
+        C = ["", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"]
+        X = ["", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"]
+        I = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"]
+        return M[num/1000] + C[(num%1000)/100] + X[(num%100)/10] + I[num%10]
+
     def romanToInt(self, s):
         """LeetCode 13 Roman to Integer"""
         res = 0
@@ -164,7 +249,7 @@ class Solution(object):
 
     def flatten(self, head):
         # class Node(val, prev, next, child):
-        """LeetCode 430"""
+        """LeetCode 430 Flatten a Multilevel Doubly Linked List"""
         if not head:
             return
         
