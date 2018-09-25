@@ -1,4 +1,132 @@
 class Solution(object):
+    class TreeNode():
+        def __init__(self, x):
+            self.val = x
+            self.left = None
+            self.right = None
+
+    def isSubtree(self, s, t):
+        """LeetCode Subtree of another Tree"""
+        def isMatch(s, t):
+            if not(s and t):
+                return s is t
+            return (s.val == t.val and 
+                    isMatch(s.left, t.left) and 
+                    isMatch(s.right, t.right))
+        if isMatch(s, t): return True
+        if not s: return False
+        return self.isSubtree(s.left, t) or self.isSubtree(s.right, t)
+
+    def buildTree2(self, preorder, inorder):
+        """LeetCode 
+        """
+        if inorder:
+            ind = inorder.index(preorder.pop(0))
+            root = self.TreeNode(inorder[ind])
+            root.left = self.buildTree(preorder, inorder[0:ind])
+            root.right = self.buildTree(preorder, inorder[ind+1:])
+            return root
+
+    def buildTree(self, inorder, postorder):
+        """LeetCode 106 Construct binary tree from in-order and post-order
+        https://leetcode.com/problems/construct-binary-tree-from-inorder-and-postorder-traversal/description/
+
+        """
+        if not inorder or not postorder:
+            return None
+        # Get the root element of the tree from post-order
+        root = self.TreeNode(postorder.pop())
+        inorderIndex = inorder.index(root.val)
+        # Get the left and right tree of the root from in-order
+        root.right = self.buildTree(inorder[inorderIndex+1:], postorder)
+        root.left = self.buildTree(inorder[:inorderIndex], postorder)
+
+        return root
+
+    # Bold/Focus on impact/Move fast/Be open/Build social value
+    def productExceptSelf(self, nums):
+        """LeetCode 238 Product of Array Except Self: 
+        https://leetcode.com/problems/product-of-array-except-self/description/
+        Time: O(n)
+        Space: O(1)
+        """
+        res = [0] * len(nums)
+        res[0] = 1
+        for i in range(1, len(nums)):
+            res[i] = res[i-1] * nums[i-1]
+        
+        # Now reverse the order
+        tmp = 1
+        for i in reversed(range(len(nums))):
+            res[i] *= tmp
+            tmp *= nums[i]
+        return res
+
+    def findCelebrity(self, n):
+        """LeetCode: 277 Find the celebrity
+        https://leetcode.com/problems/find-the-celebrity/description/
+        
+        """
+        # dummy function to ignore error
+        def knows(a, b):
+            pass
+        # first round find the candidate
+        candidate = 0
+        for i in range(1, n):
+            if knows(candidate, i):
+                candidate = i
+        
+        for i in range(n):
+            if i != candidate and ( knows(candidate, i) or not knows(i, candidate)):
+                return -1
+        return candidate
+    
+    def intersection(self, nums1, nums2):
+        """
+        LeetCode 349 Intersection of two Arrays
+        This is the DP version, 
+        O(nlogn) time complexity
+        """
+        def binary_search(nums, num):
+            lo, hi = 0, len(nums) - 1
+            while lo <= hi:
+                mid = lo + (hi-lo)//2
+                if nums[mid] == num:
+                    return True
+                elif nums[mid] > num:
+                    hi = mid - 1
+                elif nums[mid] < num:
+                    lo = mid + 1
+            return False
+        if not nums1 or not nums2:
+            return []
+        
+        res = set()
+        nums1.sort()
+        
+        for num in nums2:
+            test = binary_search(nums1, num)
+            print(test)
+            if test:
+                res.add(num)
+        return list(res)
+    
+    def romanToInt(self, s):
+        """LeetCode 13 Roman to Integer"""
+        res = 0
+        conversion = {"I": 1, "V": 5, "X": 10, "L": 50,"C": 100, "D": 500, "M": 1000}
+        size = len(s)
+        i = 0
+        while i < size:
+            digit = conversion[s[i]]
+            if i < size - 1 and conversion[s[i+1]] > conversion[s[i]]:
+                res += conversion[s[i+1]] - conversion[s[i]]
+                i += 1
+            else:
+                res += conversion[s[i]]
+            i += 1
+        return res
+
     def calculator(self, s):
         """LeetCode 224: Basic Calculator"""
         total = 0
@@ -304,8 +432,9 @@ class Solution(object):
 
         return ''.join(map(str, product[pointer:])) # only report the digits to the right side of the pointer
 
-    def longest_increasing_subsequence(self, nums):
-        # LeetCode 300
+    def lengthOfLIS(self, nums):
+        """LeetCode 300 Longest Increasing Subsequence"""
+        # DP version
         if not nums:
             return 0
         if len(nums) == 1:
@@ -318,6 +447,23 @@ class Solution(object):
                 if nums[i] > nums[j]:
                     dp[i] = max(dp[i], dp[j] + 1)
         return max(dp)
+    
+    def lengthOfLIS2(self, nums):
+        # Binary Search version
+        tails = [0] * len(nums)
+        size = 0
+        # use bisect.bisect_left is also OK
+        for x in nums:
+            i, j = 0, size
+            while i != j:
+                m = (i + j) // 2
+                if tails[m] < x:
+                    i = m + 1
+                else:
+                    j = m
+            tails[i] = x
+            size = max(i + 1, size)
+        return size
 
     def move_zeros(self, nums):
         # LeetCode 283 Move Zeros
@@ -414,7 +560,9 @@ class Solution(object):
             level = {s[:i] + s[i+1:] for s in level for i in range(len(s))}
 
     def threeSum(self, nums):
-        # 15 3Sum
+        """
+        LeetCode 15 3Sum
+        """
         result_array = []
         nums.sort()
         
@@ -452,8 +600,10 @@ class Solution(object):
         return dp[-1]
 
     def isBipartite(self, graph):
-        # LeetCode 785
-        # Bipartite define that there are only two color for all nodes, and no edge between same colored node
+        """LeetCode 785 Is Graph Bipartite
+        Bipartite define that there are only two color for all nodes, and no edge between same colored node
+        """
+
         color = {}
 
         def dfs(pos):
@@ -495,7 +645,7 @@ class Solution(object):
             
     
     def merge(self, nums1, m, nums2, n):
-        # LeetCode 88
+        """LeetCode 88 Merge Sorted Array"""
         # Start from the end of array, and move forward to start while adding the current maximum value to index
         for index in reversed(range(m+n)):
             if m > 0 and n > 0:
@@ -569,6 +719,7 @@ class Solution(object):
 
 
 solution = Solution()
-solution.top_k_frequent(['I', 'love', 'I', 'love', 'LeetCode', 'coding'], 2)
+# solution.top_k_frequent(['I', 'love', 'I', 'love', 'LeetCode', 'coding'], 2)
+solution.lengthOfLIS2([10,9,2,5,3,7,101,18])
 # solution.canAttendMeetings([[7, 10],[2, 4]])
 # print(solution.minWindow("ADOBECODEBANC", "ABC"))
